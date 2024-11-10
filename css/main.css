@@ -4,7 +4,7 @@
   --back-color: #0d1d25; /* Dark teal for the primary background */
   --text-color: #c6c6d0; /* Light neutral color for text to ensure readability on dark backgrounds */
   --sec-color: #33190b; /* Light neutral color for text to ensure readability on dark backgrounds */
-  --active-color: #104c64;
+  --active-color:#ff5900;
 }
 /* end variables */
 /* dark mode  */
@@ -88,12 +88,15 @@ body {
   color: var(--text-color);
 }
 .medication-day {
-  background-color: var(--sec-color);
-  color: var(--text-color);
+  background-color: var(--main-color);
+  color: var(--back-color);
   font-weight: bold;
 }
 .today {
   border: 3px solid var(--active-color);
+}
+.medication-day .day-name {
+  color: var(--back-color);
 }
 .day-name {
   font-size: 0.8em;
