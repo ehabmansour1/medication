@@ -1,0 +1,114 @@
+/* start variables */
+:root {
+  --main-color: #d59d80; /* A warm, prominent orange for main highlights */
+  --back-color: #0d1d25; /* Dark teal for the primary background */
+  --text-color: #c6c6d0; /* Light neutral color for text to ensure readability on dark backgrounds */
+  --sec-color: #33190b; /* Light neutral color for text to ensure readability on dark backgrounds */
+  --active-color: #104c64;
+}
+/* end variables */
+/* dark mode  */
+.dark-mode {
+  --main-color: ;
+  --back-color: ;
+  --text-color: ;
+}
+/* dark mode  */
+/* start global rules */
+* {
+  -webkit-box-sizing: border-box;
+  -o-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  background-color: var(--back-color);
+}
+
+/* Small */
+@media (min-width: 768px) {
+  .container {
+    width: 750px;
+  }
+}
+/* Medium */
+@media (min-width: 992px) {
+  .container {
+    width: 970px;
+  }
+}
+/* Large */
+@media (min-width: 1200px) {
+  .container {
+    width: 1170px;
+  }
+}
+html {
+  scroll-behavior: smooth;
+}
+.container {
+  padding-left: 15px;
+  padding-right: 15px;
+  margin-left: auto;
+  margin-right: auto;
+}
+a {
+  text-decoration: none;
+}
+ul {
+  list-style: none;
+}
+img {
+  max-width: 100%;
+}
+/* End Global Rules */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  flex-direction: column;
+  font-family: "Open Sans", serif;
+}
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  max-width: 400px;
+  margin-top: 20px;
+}
+.day {
+  padding: 10px;
+  text-align: center;
+  border: 3px solid var(--main-color);
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+.medication-day {
+  background-color: var(--sec-color);
+  color: var(--text-color);
+  font-weight: bold;
+}
+.today {
+  border: 3px solid var(--active-color);
+}
+.day-name {
+  font-size: 0.8em;
+  color: var(--main-color);
+}
+.date-number {
+  font-size: 1.1em;
+}
+h2 {
+  color: var(--main-color);
+}
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 20px;
+}
