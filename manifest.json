@@ -2,7 +2,7 @@
   "name": "Medication Calendar",
   "short_name": "Medication",
   "description": "A simple calendar for tracking medication",
-  "start_url": "/",
+  "start_url": "/medication/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
