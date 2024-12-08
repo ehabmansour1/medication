@@ -1,13 +1,13 @@
 const cacheName = "medication-calendar-v1";
 const assetsToCache = [
-  "/",
-  "/index.html",
-  "/css/normalize.css",
-  "/css/main.css",
-  "/javascript/main.js",
-  "/images/favicon.ico",
-  "/images/1098028.png",
-  "/images/1098028.png",
+  "/medication/",
+  "/medication/index.html",
+  "/medication/css/normalize.css",
+  "/medication/css/main.css",
+  "/medication/javascript/main.js",
+  "/medication/images/favicon.ico",
+  "/medication/images/1098028.png",
+  "/medication/images/1098028.png",
 ];
 
 // Install service worker
