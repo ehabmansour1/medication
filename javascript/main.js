@@ -42,10 +42,11 @@ function generateCalendar(month, year) {
 // Generate current month calendar on load
 const today = new Date();
 generateCalendar(today.getMonth(), today.getFullYear());
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/service-worker.js")
+      .register("/medication/service-worker.js") // Update this path to reflect the subdirectory
       .then((registration) => {
         console.log(
           "Service Worker registered with scope: ",
