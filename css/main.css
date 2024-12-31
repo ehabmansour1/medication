@@ -20,7 +20,7 @@ body {
   align-items: center;
   min-height: 100vh;
   font-family: "Open Sans", sans-serif;
-  padding: 20px;
+  padding: 10px;
 }
 
 .container {
@@ -72,19 +72,23 @@ h2 {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 10px;
-  padding: 20px;
   background-color: rgba(255, 255, 255, 0.02);
   border-radius: 10px;
 }
 
 .day {
-  padding: 10px;
+  padding: 5px;
   text-align: center;
   border: 2px solid rgba(213, 157, 128, 0.3);
   border-radius: 8px;
   font-size: 0.9em;
   color: var(--text-color);
   transition: transform 0.2s, box-shadow 0.2s;
+  min-height: 75px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .medication-day {
@@ -150,8 +154,7 @@ h2 {
 @media (max-width: 600px) {
   .calendar {
     gap: 5px;
-    padding: 10px;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
   }
 
   .day {
@@ -167,5 +170,8 @@ h2 {
   .stat-card {
     width: 100%;
     max-width: 200px;
+  }
+  .container {
+    padding: 10px;
   }
 }
