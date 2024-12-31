@@ -1,4 +1,4 @@
-const startDate = new Date("2024-11-10");
+const startDate = new Date("2024-11-12");
 const medicationCycle = 3;
 
 function updateStats() {
