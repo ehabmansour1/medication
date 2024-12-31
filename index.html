@@ -2,30 +2,34 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="" />
-    <meta name="keywords" content="" />
-    <script
-      src="https://kit.fontawesome.com/3162f5d9b2.js"
-      crossorigin="anonymous"
-    ></script>
-    <link rel="stylesheet" href="css/normalize.css" />
-    <link rel="stylesheet" href="css/main.css" />
-    <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Medication</title>
+    <title>Medication Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="manifest" href="manifest.json" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300..800&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="css/main.css" />
   </head>
   <body>
-    <div class="container text-center">
-      <h2>Medication Calendar</h2>
+    <div class="container">
+      <div>
+        <h2>Medication Tracker</h2>
+        <div class="stats">
+          <div class="stat-card">
+            <h3>Adherence Rate</h3>
+            <p id="adherenceRate">0%</p>
+          </div>
+          <div class="stat-card">
+            <h3>Doses This Month</h3>
+            <p id="dosesCount">0/0</p>
+          </div>
+        </div>
+      </div>
       <div class="calendar" id="calendar"></div>
     </div>
+
     <script src="javascript/main.js"></script>
   </body>
 </html>
