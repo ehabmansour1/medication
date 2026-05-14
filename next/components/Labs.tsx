@@ -1,26 +1,25 @@
 "use client";
 
 import {
+  FileText,
+  FlaskConical,
   Pencil,
   Plus,
+  Settings as SettingsIcon,
   Trash2,
   Upload,
   X,
-  FlaskConical,
-  FileText,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Hormone, LabResult } from "@/lib/types";
 
-type HormoneFormState = { name: string; unit: string; normalRange: string };
 type ResultFormState = {
   date: string;
   value: string;
   notes: string;
   imageUrls: string[];
 };
-
-const emptyHormone: HormoneFormState = { name: "", unit: "", normalRange: "" };
 
 function todayIso() {
   const d = new Date();
@@ -39,18 +38,16 @@ function parseRange(range: string): [number, number] | null {
   return lo <= hi ? [lo, hi] : [hi, lo];
 }
 
+function isPdf(url: string) {
+  return url.toLowerCase().split("?")[0].endsWith(".pdf");
+}
+
 export default function Labs() {
   const [hormones, setHormones] = useState<Hormone[]>([]);
   const [results, setResults] = useState<LabResult[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [hormoneModal, setHormoneModal] = useState<
-    | { mode: "add"; form: HormoneFormState }
-    | { mode: "edit"; id: string; form: HormoneFormState }
-    | null
-  >(null);
 
   const [resultModal, setResultModal] = useState<
     | { mode: "add"; form: ResultFormState }
@@ -60,6 +57,8 @@ export default function Labs() {
 
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -98,6 +97,15 @@ export default function Labs() {
     };
   }, [activeId]);
 
+  useEffect(() => {
+    if (!viewerUrl) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setViewerUrl(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewerUrl]);
+
   const activeHormone = useMemo(
     () => hormones.find((h) => h._id === activeId) ?? null,
     [hormones, activeId]
@@ -107,58 +115,6 @@ export default function Labs() {
     () => (activeHormone ? parseRange(activeHormone.normalRange) : null),
     [activeHormone]
   );
-
-  async function saveHormone() {
-    if (!hormoneModal) return;
-    const form = hormoneModal.form;
-    if (!form.name.trim()) {
-      setError("Name is required");
-      return;
-    }
-
-    try {
-      if (hormoneModal.mode === "add") {
-        const res = await fetch("/api/hormones", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as { hormone: Hormone };
-        setHormones((prev) => [...prev, data.hormone]);
-        setActiveId(data.hormone._id);
-      } else {
-        const res = await fetch(`/api/hormones/${hormoneModal.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        setHormones((prev) =>
-          prev.map((h) => (h._id === hormoneModal.id ? { ...h, ...form } : h))
-        );
-      }
-      setHormoneModal(null);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-    }
-  }
-
-  async function deleteHormone(id: string) {
-    if (!confirm("Delete this hormone and all its results?")) return;
-    try {
-      const res = await fetch(`/api/hormones/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setHormones((prev) => prev.filter((h) => h._id !== id));
-      if (activeId === id) {
-        const next = hormones.find((h) => h._id !== id) ?? null;
-        setActiveId(next ? next._id : null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
-    }
-  }
 
   async function saveResult() {
     if (!resultModal || !activeId) return;
@@ -284,47 +240,37 @@ export default function Labs() {
 
       {error && <p className="labs-error">{error}</p>}
 
-      <div className="hormone-tabs" role="tablist">
-        {hormones.map((h) => (
-          <button
-            key={h._id}
-            type="button"
-            role="tab"
-            aria-selected={activeId === h._id}
-            className={`hormone-tab${activeId === h._id ? " active" : ""}`}
-            onClick={() => setActiveId(h._id)}
-          >
-            {h.name}
-          </button>
-        ))}
-        <button
-          type="button"
-          className="hormone-tab add"
-          onClick={() => setHormoneModal({ mode: "add", form: emptyHormone })}
-          aria-label="Add hormone"
-        >
-          <Plus size={16} strokeWidth={2.4} />
-        </button>
-      </div>
+      {hormones.length > 0 && (
+        <div className="hormone-tabs" role="tablist">
+          {hormones.map((h) => (
+            <button
+              key={h._id}
+              type="button"
+              role="tab"
+              aria-selected={activeId === h._id}
+              className={`hormone-tab${activeId === h._id ? " active" : ""}`}
+              onClick={() => setActiveId(h._id)}
+            >
+              {h.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading && <p className="labs-empty">Loading…</p>}
 
       {!loading && hormones.length === 0 && (
         <div className="labs-empty">
           <p>No hormones yet.</p>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setHormoneModal({ mode: "add", form: emptyHormone })}
-          >
-            <Plus size={16} /> Add your first hormone
-          </button>
+          <Link href="/settings" className="btn-primary">
+            <SettingsIcon size={16} /> Add one in Settings
+          </Link>
         </div>
       )}
 
       {activeHormone && (
         <>
-          <section className="hormone-card">
+          <section className="hormone-card readonly">
             <div className="hormone-card-main">
               <h3>{activeHormone.name}</h3>
               <div className="hormone-meta">
@@ -333,34 +279,6 @@ export default function Labs() {
                   <span>Normal: {activeHormone.normalRange}</span>
                 )}
               </div>
-            </div>
-            <div className="hormone-actions">
-              <button
-                type="button"
-                className="icon-btn"
-                aria-label="Edit hormone"
-                onClick={() =>
-                  setHormoneModal({
-                    mode: "edit",
-                    id: activeHormone._id,
-                    form: {
-                      name: activeHormone.name,
-                      unit: activeHormone.unit,
-                      normalRange: activeHormone.normalRange,
-                    },
-                  })
-                }
-              >
-                <Pencil size={16} />
-              </button>
-              <button
-                type="button"
-                className="icon-btn danger"
-                aria-label="Delete hormone"
-                onClick={() => deleteHormone(activeHormone._id)}
-              >
-                <Trash2 size={16} />
-              </button>
             </div>
           </section>
 
@@ -431,24 +349,32 @@ export default function Labs() {
                   {r.notes && <p className="result-notes">{r.notes}</p>}
                   {r.imageUrls.length > 0 && (
                     <div className="result-images">
-                      {r.imageUrls.map((url) => (
-                        <a
-                          key={url}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="result-thumb"
-                        >
-                          {url.endsWith(".pdf") ? (
+                      {r.imageUrls.map((url) =>
+                        isPdf(url) ? (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="result-thumb"
+                          >
                             <span className="pdf-thumb">
                               <FileText size={20} /> PDF
                             </span>
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            key={url}
+                            className="result-thumb"
+                            onClick={() => setViewerUrl(url)}
+                            aria-label="View image"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={url} alt="result" />
-                          )}
-                        </a>
-                      ))}
+                          </button>
+                        )
+                      )}
                     </div>
                   )}
                 </li>
@@ -456,78 +382,6 @@ export default function Labs() {
             })}
           </ul>
         </>
-      )}
-
-      {hormoneModal && (
-        <div className="modal-backdrop" onClick={() => setHormoneModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <h3>{hormoneModal.mode === "add" ? "Add hormone" : "Edit hormone"}</h3>
-              <button
-                type="button"
-                className="icon-btn"
-                aria-label="Close"
-                onClick={() => setHormoneModal(null)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <label className="field">
-              <span>Name *</span>
-              <input
-                type="text"
-                value={hormoneModal.form.name}
-                placeholder="Testosterone"
-                onChange={(e) =>
-                  setHormoneModal({
-                    ...hormoneModal,
-                    form: { ...hormoneModal.form, name: e.target.value },
-                  })
-                }
-              />
-            </label>
-            <label className="field">
-              <span>Unit</span>
-              <input
-                type="text"
-                value={hormoneModal.form.unit}
-                placeholder="ng/dL"
-                onChange={(e) =>
-                  setHormoneModal({
-                    ...hormoneModal,
-                    form: { ...hormoneModal.form, unit: e.target.value },
-                  })
-                }
-              />
-            </label>
-            <label className="field">
-              <span>Normal range</span>
-              <input
-                type="text"
-                value={hormoneModal.form.normalRange}
-                placeholder="264-916"
-                onChange={(e) =>
-                  setHormoneModal({
-                    ...hormoneModal,
-                    form: { ...hormoneModal.form, normalRange: e.target.value },
-                  })
-                }
-              />
-            </label>
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => setHormoneModal(null)}
-              >
-                Cancel
-              </button>
-              <button type="button" className="btn-primary" onClick={saveHormone}>
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {resultModal && (
@@ -601,7 +455,7 @@ export default function Labs() {
                 <div className="upload-preview">
                   {resultModal.form.imageUrls.map((url) => (
                     <div key={url} className="upload-thumb">
-                      {url.endsWith(".pdf") ? (
+                      {isPdf(url) ? (
                         <span className="pdf-thumb">
                           <FileText size={18} /> PDF
                         </span>
@@ -641,6 +495,21 @@ export default function Labs() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {viewerUrl && (
+        <div className="image-viewer" onClick={() => setViewerUrl(null)}>
+          <button
+            type="button"
+            className="image-viewer-close"
+            aria-label="Close"
+            onClick={() => setViewerUrl(null)}
+          >
+            <X size={24} />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewerUrl} alt="result" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>

@@ -677,6 +677,113 @@ h2 {
   }
 }
 
+/* ====== Settings ====== */
+
+.settings-section {
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(213, 157, 128, 0.18);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-section-head h3 {
+  color: var(--main-color);
+  font-size: 1rem;
+}
+
+.hormone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hormone-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(213, 157, 128, 0.15);
+  border-radius: 10px;
+}
+
+.hormone-row-main strong {
+  color: var(--main-color);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.hormone-card.readonly {
+  cursor: default;
+}
+
+/* ====== Image viewer ====== */
+
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+  animation: fade-in 0.15s ease;
+  cursor: zoom-out;
+}
+
+.image-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+
+.image-viewer-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.image-viewer-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Make result-thumb buttons render like the anchors */
+button.result-thumb {
+  padding: 0;
+  border: 1px solid rgba(213, 157, 128, 0.2);
+  cursor: zoom-in;
+}
+
 @media (max-width: 600px) {
   .calendar {
     gap: 5px;
