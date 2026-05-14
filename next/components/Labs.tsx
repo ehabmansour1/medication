@@ -1,0 +1,648 @@
+"use client";
+
+import {
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+  X,
+  FlaskConical,
+  FileText,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Hormone, LabResult } from "@/lib/types";
+
+type HormoneFormState = { name: string; unit: string; normalRange: string };
+type ResultFormState = {
+  date: string;
+  value: string;
+  notes: string;
+  imageUrls: string[];
+};
+
+const emptyHormone: HormoneFormState = { name: "", unit: "", normalRange: "" };
+
+function todayIso() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseRange(range: string): [number, number] | null {
+  const m = range.match(/^\s*(-?\d+(?:\.\d+)?)\s*[-–to]+\s*(-?\d+(?:\.\d+)?)\s*$/i);
+  if (!m) return null;
+  const lo = Number(m[1]);
+  const hi = Number(m[2]);
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return null;
+  return lo <= hi ? [lo, hi] : [hi, lo];
+}
+
+export default function Labs() {
+  const [hormones, setHormones] = useState<Hormone[]>([]);
+  const [results, setResults] = useState<LabResult[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [hormoneModal, setHormoneModal] = useState<
+    | { mode: "add"; form: HormoneFormState }
+    | { mode: "edit"; id: string; form: HormoneFormState }
+    | null
+  >(null);
+
+  const [resultModal, setResultModal] = useState<
+    | { mode: "add"; form: ResultFormState }
+    | { mode: "edit"; id: string; form: ResultFormState }
+    | null
+  >(null);
+
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/hormones", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { hormones: Hormone[] };
+        setHormones(data.hormones);
+        if (data.hormones.length > 0) setActiveId(data.hormones[0]._id);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load hormones");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!activeId) {
+      setResults([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/results?hormoneId=${activeId}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { results: LabResult[] };
+        if (!cancelled) setResults(data.results);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load results");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId]);
+
+  const activeHormone = useMemo(
+    () => hormones.find((h) => h._id === activeId) ?? null,
+    [hormones, activeId]
+  );
+
+  const range = useMemo(
+    () => (activeHormone ? parseRange(activeHormone.normalRange) : null),
+    [activeHormone]
+  );
+
+  async function saveHormone() {
+    if (!hormoneModal) return;
+    const form = hormoneModal.form;
+    if (!form.name.trim()) {
+      setError("Name is required");
+      return;
+    }
+
+    try {
+      if (hormoneModal.mode === "add") {
+        const res = await fetch("/api/hormones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { hormone: Hormone };
+        setHormones((prev) => [...prev, data.hormone]);
+        setActiveId(data.hormone._id);
+      } else {
+        const res = await fetch(`/api/hormones/${hormoneModal.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setHormones((prev) =>
+          prev.map((h) => (h._id === hormoneModal.id ? { ...h, ...form } : h))
+        );
+      }
+      setHormoneModal(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+    }
+  }
+
+  async function deleteHormone(id: string) {
+    if (!confirm("Delete this hormone and all its results?")) return;
+    try {
+      const res = await fetch(`/api/hormones/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setHormones((prev) => prev.filter((h) => h._id !== id));
+      if (activeId === id) {
+        const next = hormones.find((h) => h._id !== id) ?? null;
+        setActiveId(next ? next._id : null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete");
+    }
+  }
+
+  async function saveResult() {
+    if (!resultModal || !activeId) return;
+    const form = resultModal.form;
+    if (!form.date) {
+      setError("Date is required");
+      return;
+    }
+
+    try {
+      if (resultModal.mode === "add") {
+        const res = await fetch("/api/results", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            hormoneId: activeId,
+            date: form.date,
+            value: form.value,
+            notes: form.notes,
+            imageUrls: form.imageUrls,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { result: LabResult };
+        setResults((prev) =>
+          [data.result, ...prev].sort((a, b) => b.date.localeCompare(a.date))
+        );
+      } else {
+        const res = await fetch(`/api/results/${resultModal.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: form.date,
+            value: form.value,
+            notes: form.notes,
+            imageUrls: form.imageUrls,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setResults((prev) =>
+          prev
+            .map((r) =>
+              r._id === resultModal.id
+                ? {
+                    ...r,
+                    date: form.date,
+                    value: form.value === "" ? null : Number(form.value),
+                    notes: form.notes.trim() || null,
+                    imageUrls: form.imageUrls,
+                  }
+                : r
+            )
+            .sort((a, b) => b.date.localeCompare(a.date))
+        );
+      }
+      setResultModal(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+    }
+  }
+
+  async function deleteResult(id: string) {
+    if (!confirm("Delete this result?")) return;
+    try {
+      const res = await fetch(`/api/results/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setResults((prev) => prev.filter((r) => r._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete");
+    }
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0 || !resultModal) return;
+    setUploading(true);
+    setError(null);
+    const uploaded: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!res.ok) {
+          const err = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(err?.error ?? `Upload failed (${res.status})`);
+        }
+        const data = (await res.json()) as { url: string };
+        uploaded.push(data.url);
+      }
+      setResultModal((prev) =>
+        prev
+          ? { ...prev, form: { ...prev.form, imageUrls: [...prev.form.imageUrls, ...uploaded] } }
+          : prev
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function removeUploadedImage(url: string) {
+    setResultModal((prev) =>
+      prev
+        ? {
+            ...prev,
+            form: { ...prev.form, imageUrls: prev.form.imageUrls.filter((u) => u !== url) },
+          }
+        : prev
+    );
+  }
+
+  return (
+    <div className="labs">
+      <header className="labs-header">
+        <h2>
+          <FlaskConical size={22} strokeWidth={2.2} /> Labs
+        </h2>
+        <p className="labs-sub">Track hormone results over time</p>
+      </header>
+
+      {error && <p className="labs-error">{error}</p>}
+
+      <div className="hormone-tabs" role="tablist">
+        {hormones.map((h) => (
+          <button
+            key={h._id}
+            type="button"
+            role="tab"
+            aria-selected={activeId === h._id}
+            className={`hormone-tab${activeId === h._id ? " active" : ""}`}
+            onClick={() => setActiveId(h._id)}
+          >
+            {h.name}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="hormone-tab add"
+          onClick={() => setHormoneModal({ mode: "add", form: emptyHormone })}
+          aria-label="Add hormone"
+        >
+          <Plus size={16} strokeWidth={2.4} />
+        </button>
+      </div>
+
+      {loading && <p className="labs-empty">Loading…</p>}
+
+      {!loading && hormones.length === 0 && (
+        <div className="labs-empty">
+          <p>No hormones yet.</p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setHormoneModal({ mode: "add", form: emptyHormone })}
+          >
+            <Plus size={16} /> Add your first hormone
+          </button>
+        </div>
+      )}
+
+      {activeHormone && (
+        <>
+          <section className="hormone-card">
+            <div className="hormone-card-main">
+              <h3>{activeHormone.name}</h3>
+              <div className="hormone-meta">
+                {activeHormone.unit && <span>Unit: {activeHormone.unit}</span>}
+                {activeHormone.normalRange && (
+                  <span>Normal: {activeHormone.normalRange}</span>
+                )}
+              </div>
+            </div>
+            <div className="hormone-actions">
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Edit hormone"
+                onClick={() =>
+                  setHormoneModal({
+                    mode: "edit",
+                    id: activeHormone._id,
+                    form: {
+                      name: activeHormone.name,
+                      unit: activeHormone.unit,
+                      normalRange: activeHormone.normalRange,
+                    },
+                  })
+                }
+              >
+                <Pencil size={16} />
+              </button>
+              <button
+                type="button"
+                className="icon-btn danger"
+                aria-label="Delete hormone"
+                onClick={() => deleteHormone(activeHormone._id)}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </section>
+
+          <div className="results-toolbar">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() =>
+                setResultModal({
+                  mode: "add",
+                  form: { date: todayIso(), value: "", notes: "", imageUrls: [] },
+                })
+              }
+            >
+              <Plus size={16} /> Add result
+            </button>
+          </div>
+
+          <ul className="results-list">
+            {results.length === 0 && (
+              <li className="labs-empty small">No results for this hormone yet.</li>
+            )}
+            {results.map((r) => {
+              const out =
+                r.value !== null && range && (r.value < range[0] || r.value > range[1]);
+              return (
+                <li key={r._id} className="result-card">
+                  <div className="result-top">
+                    <div>
+                      <div className="result-date">{r.date}</div>
+                      {r.value !== null && (
+                        <div className={`result-value${out ? " out-of-range" : ""}`}>
+                          {r.value}
+                          {activeHormone.unit ? ` ${activeHormone.unit}` : ""}
+                        </div>
+                      )}
+                    </div>
+                    <div className="result-actions">
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        aria-label="Edit result"
+                        onClick={() =>
+                          setResultModal({
+                            mode: "edit",
+                            id: r._id,
+                            form: {
+                              date: r.date,
+                              value: r.value === null ? "" : String(r.value),
+                              notes: r.notes ?? "",
+                              imageUrls: r.imageUrls,
+                            },
+                          })
+                        }
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-btn danger"
+                        aria-label="Delete result"
+                        onClick={() => deleteResult(r._id)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                  {r.notes && <p className="result-notes">{r.notes}</p>}
+                  {r.imageUrls.length > 0 && (
+                    <div className="result-images">
+                      {r.imageUrls.map((url) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="result-thumb"
+                        >
+                          {url.endsWith(".pdf") ? (
+                            <span className="pdf-thumb">
+                              <FileText size={20} /> PDF
+                            </span>
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={url} alt="result" />
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+
+      {hormoneModal && (
+        <div className="modal-backdrop" onClick={() => setHormoneModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>{hormoneModal.mode === "add" ? "Add hormone" : "Edit hormone"}</h3>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Close"
+                onClick={() => setHormoneModal(null)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <label className="field">
+              <span>Name *</span>
+              <input
+                type="text"
+                value={hormoneModal.form.name}
+                placeholder="Testosterone"
+                onChange={(e) =>
+                  setHormoneModal({
+                    ...hormoneModal,
+                    form: { ...hormoneModal.form, name: e.target.value },
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Unit</span>
+              <input
+                type="text"
+                value={hormoneModal.form.unit}
+                placeholder="ng/dL"
+                onChange={(e) =>
+                  setHormoneModal({
+                    ...hormoneModal,
+                    form: { ...hormoneModal.form, unit: e.target.value },
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Normal range</span>
+              <input
+                type="text"
+                value={hormoneModal.form.normalRange}
+                placeholder="264-916"
+                onChange={(e) =>
+                  setHormoneModal({
+                    ...hormoneModal,
+                    form: { ...hormoneModal.form, normalRange: e.target.value },
+                  })
+                }
+              />
+            </label>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setHormoneModal(null)}
+              >
+                Cancel
+              </button>
+              <button type="button" className="btn-primary" onClick={saveHormone}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resultModal && (
+        <div className="modal-backdrop" onClick={() => setResultModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>{resultModal.mode === "add" ? "Add result" : "Edit result"}</h3>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="Close"
+                onClick={() => setResultModal(null)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <label className="field">
+              <span>Date *</span>
+              <input
+                type="date"
+                value={resultModal.form.date}
+                onChange={(e) =>
+                  setResultModal({
+                    ...resultModal,
+                    form: { ...resultModal.form, date: e.target.value },
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Value</span>
+              <input
+                type="number"
+                step="any"
+                value={resultModal.form.value}
+                placeholder={activeHormone?.unit || "e.g. 540"}
+                onChange={(e) =>
+                  setResultModal({
+                    ...resultModal,
+                    form: { ...resultModal.form, value: e.target.value },
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Notes</span>
+              <textarea
+                rows={3}
+                value={resultModal.form.notes}
+                onChange={(e) =>
+                  setResultModal({
+                    ...resultModal,
+                    form: { ...resultModal.form, notes: e.target.value },
+                  })
+                }
+              />
+            </label>
+
+            <div className="field">
+              <span>Images / PDFs</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                multiple
+                onChange={(e) => handleFiles(e.target.files)}
+                disabled={uploading}
+              />
+              {uploading && <p className="upload-status">Uploading…</p>}
+              {resultModal.form.imageUrls.length > 0 && (
+                <div className="upload-preview">
+                  {resultModal.form.imageUrls.map((url) => (
+                    <div key={url} className="upload-thumb">
+                      {url.endsWith(".pdf") ? (
+                        <span className="pdf-thumb">
+                          <FileText size={18} /> PDF
+                        </span>
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={url} alt="upload" />
+                      )}
+                      <button
+                        type="button"
+                        className="upload-remove"
+                        aria-label="Remove"
+                        onClick={() => removeUploadedImage(url)}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setResultModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={uploading}
+                onClick={saveResult}
+              >
+                <Upload size={14} /> Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

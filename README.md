@@ -19,6 +19,14 @@ npm run dev
 Import this repo into Vercel and set:
 
 - **Root Directory:** `next`
-- **Environment Variables:** `MONGODB_URI`, `MONGODB_DB` (Production + Preview + Development)
+- **Environment Variables:** `MONGODB_URI`, `MONGODB_DB`, `BLOB_READ_WRITE_TOKEN` (Production + Preview + Development)
 
 In MongoDB Atlas → Network Access, allow `0.0.0.0/0` (or Vercel's egress IPs).
+
+### Vercel Blob (for lab result images)
+
+The Labs page uploads test result images to **Vercel Blob**.
+
+1. In your Vercel project → **Storage** → **Create** → **Blob**.
+2. Connect it to the project. Vercel auto-injects `BLOB_READ_WRITE_TOKEN`.
+3. For local dev, copy that token into `next/.env.local`.

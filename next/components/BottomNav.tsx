@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Sparkles, type LucideIcon } from "lucide-react";
+import { CalendarDays, FlaskConical, type LucideIcon } from "lucide-react";
 
 type NavItem = {
   href: string;
@@ -12,7 +12,7 @@ type NavItem = {
 
 const items: NavItem[] = [
   { href: "/", label: "Calendar", Icon: CalendarDays },
-  { href: "/other", label: "Soon", Icon: Sparkles },
+  { href: "/labs", label: "Labs", Icon: FlaskConical },
 ];
 
 export default function BottomNav() {

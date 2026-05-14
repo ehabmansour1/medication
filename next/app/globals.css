@@ -255,17 +255,426 @@ h2 {
   outline-offset: 2px;
 }
 
-.placeholder-page {
+/* ====== Labs page ====== */
+
+.labs {
   max-width: 800px;
   width: 100%;
   margin: 0 auto;
-  padding: 40px 20px;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   color: var(--text-color);
 }
 
-.placeholder-page h2 {
-  margin-bottom: 12px;
+.labs-header h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--main-color);
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+}
+
+.labs-sub {
+  font-size: 0.85rem;
+  color: rgba(198, 198, 208, 0.65);
+}
+
+.labs-error {
+  background-color: rgba(255, 89, 0, 0.12);
+  border: 1px solid rgba(255, 89, 0, 0.4);
+  color: #ffb38a;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.labs-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: rgba(198, 198, 208, 0.65);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.labs-empty.small {
+  padding: 16px;
+  font-size: 0.9rem;
+}
+
+.hormone-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hormone-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.hormone-tab {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(213, 157, 128, 0.25);
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.hormone-tab:hover {
+  border-color: var(--main-color);
+  color: var(--main-color);
+}
+
+.hormone-tab.active {
+  background-color: rgba(255, 89, 0, 0.12);
+  border-color: var(--active-color);
+  color: var(--active-color);
+}
+
+.hormone-tab.add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+  color: var(--main-color);
+}
+
+.hormone-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: rgba(213, 157, 128, 0.08);
+  border: 1px solid rgba(213, 157, 128, 0.2);
+  border-radius: 12px;
+}
+
+.hormone-card h3 {
+  color: var(--main-color);
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+
+.hormone-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: rgba(198, 198, 208, 0.8);
+}
+
+.hormone-actions,
+.result-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(213, 157, 128, 0.25);
+  background-color: transparent;
+  color: var(--text-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.icon-btn:hover {
+  border-color: var(--main-color);
+  color: var(--main-color);
+}
+
+.icon-btn.danger:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+.results-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-primary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background-color: var(--main-color);
+  color: var(--back-color);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--active-color);
+  color: #fff;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  border-color: rgba(213, 157, 128, 0.3);
+  color: var(--text-color);
+}
+
+.btn-ghost:hover {
+  border-color: var(--main-color);
+  color: var(--main-color);
+}
+
+.results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-card {
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(213, 157, 128, 0.18);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.result-date {
+  font-size: 0.8rem;
+  color: rgba(198, 198, 208, 0.7);
+  margin-bottom: 4px;
+}
+
+.result-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--main-color);
+}
+
+.result-value.out-of-range {
+  color: #ff6b6b;
+}
+
+.result-notes {
+  font-size: 0.9rem;
+  color: rgba(198, 198, 208, 0.85);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.result-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.result-thumb {
+  display: inline-block;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(213, 157, 128, 0.2);
+}
+
+.result-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pdf-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--main-color);
+}
+
+/* ====== Modal ====== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+  animation: fade-in 0.15s ease;
+}
+
+.modal {
+  background-color: #0d1d25;
+  border: 1px solid rgba(213, 157, 128, 0.25);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-head h3 {
+  color: var(--main-color);
+  font-size: 1.15rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: rgba(198, 198, 208, 0.85);
+}
+
+.field > span {
+  font-weight: 500;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="date"],
+.field input[type="file"],
+.field textarea {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(213, 157, 128, 0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--main-color);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.upload-status {
+  font-size: 0.8rem;
+  color: var(--main-color);
+}
+
+.upload-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.upload-thumb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(213, 157, 128, 0.2);
+}
+
+.upload-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.upload-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 600px) {
