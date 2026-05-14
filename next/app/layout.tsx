@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import BottomNav from "@/components/BottomNav";
+import InstallPrompt from "@/components/InstallPrompt";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <InstallPrompt />
         {children}
         <BottomNav />
       </body>

@@ -1,11 +1,13 @@
 "use client";
 
 import {
+  Camera,
   ChevronLeft,
   ChevronRight,
   Eye,
   FileText,
   FlaskConical,
+  ImagePlus,
   Pencil,
   Plus,
   Settings as SettingsIcon,
@@ -13,6 +15,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { vibrate } from "@/lib/haptic";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -69,6 +72,7 @@ export default function Labs() {
 
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   const [viewer, setViewer] = useState<Viewer>(null);
   const [confirmDel, setConfirmDel] = useState<{ id: string; date: string } | null>(null);
@@ -240,6 +244,7 @@ export default function Labs() {
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
   }
 
@@ -441,13 +446,45 @@ export default function Labs() {
 
             <div className="field">
               <span>Images / PDFs</span>
+              <div className="upload-buttons">
+                <button
+                  type="button"
+                  className="btn-ghost upload-btn"
+                  disabled={uploading}
+                  onClick={() => {
+                    vibrate(10);
+                    cameraInputRef.current?.click();
+                  }}
+                >
+                  <Camera size={16} /> Camera
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost upload-btn"
+                  disabled={uploading}
+                  onClick={() => {
+                    vibrate(10);
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <ImagePlus size={16} /> Files
+                </button>
+              </div>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={(e) => handleFiles(e.target.files)}
+              />
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*,application/pdf"
                 multiple
+                hidden
                 onChange={(e) => handleFiles(e.target.files)}
-                disabled={uploading}
               />
               {uploading && <p className="upload-status">Uploading…</p>}
               {resultModal.form.imageUrls.length > 0 && (

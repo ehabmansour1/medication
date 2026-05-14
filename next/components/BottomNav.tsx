@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   FlaskConical,
+  LineChart,
   Settings as SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -18,6 +19,7 @@ type NavItem = {
 const items: NavItem[] = [
   { href: "/", label: "Calendar", Icon: CalendarDays },
   { href: "/labs", label: "Labs", Icon: FlaskConical },
+  { href: "/trends", label: "Trends", Icon: LineChart },
   { href: "/settings", label: "Settings", Icon: SettingsIcon },
 ];
 

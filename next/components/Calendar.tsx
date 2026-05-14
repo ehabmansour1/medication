@@ -1,10 +1,15 @@
 "use client";
 
+import { Flame, Target } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { computeStreak } from "@/lib/streak";
+import { vibrate } from "@/lib/haptic";
 
 const START_DATE = new Date("2024-11-12");
 const MEDICATION_CYCLE = 3;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const GOAL_KEY = "medication_goal";
+const DEFAULT_GOAL = 80;
 
 function toDateString(date: Date): string {
   const y = date.getFullYear();
@@ -48,6 +53,13 @@ export default function Calendar() {
   const [taken, setTaken] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [goal, setGoal] = useState<number>(DEFAULT_GOAL);
+
+  useEffect(() => {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(GOAL_KEY) : null;
+    const parsed = raw ? Number(raw) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) setGoal(parsed);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,8 +83,17 @@ export default function Calendar() {
   const adherenceRate =
     medicationDays.length > 0 ? Math.round((takenInMonth / medicationDays.length) * 100) : 0;
 
+  const streak = useMemo(
+    () => computeStreak(taken, START_DATE, MEDICATION_CYCLE),
+    [taken]
+  );
+
+  const goalProgress = Math.min(100, Math.round((adherenceRate / Math.max(goal, 1)) * 100));
+  const goalMet = adherenceRate >= goal;
+
   async function markTaken(dateString: string) {
     setPending((p) => new Set(p).add(dateString));
+    vibrate(15);
     try {
       const res = await fetch("/api/medications", {
         method: "POST",
@@ -81,6 +102,7 @@ export default function Calendar() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setTaken((prev) => new Set(prev).add(dateString));
+      vibrate([10, 40, 20]);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -107,7 +129,32 @@ export default function Calendar() {
               {takenInMonth}/{medicationDays.length}
             </p>
           </div>
+          <div className="stat-card streak-card">
+            <h3>
+              <Flame size={14} /> Streak
+            </h3>
+            <p>{streak.current}</p>
+            <small>Best: {streak.longest}</small>
+          </div>
         </div>
+
+        <div className="goal-card">
+          <div className="goal-head">
+            <span>
+              <Target size={14} /> Goal: {goal}%
+            </span>
+            <span className={goalMet ? "goal-met" : ""}>
+              {goalMet ? "✓ Met" : `${adherenceRate}%`}
+            </span>
+          </div>
+          <div className="goal-bar">
+            <div
+              className={`goal-fill${goalMet ? " met" : ""}`}
+              style={{ width: `${goalProgress}%` }}
+            />
+          </div>
+        </div>
+
         {loadError && (
           <p style={{ color: "#ff8080", textAlign: "center", marginBottom: 8 }}>
             {loadError}

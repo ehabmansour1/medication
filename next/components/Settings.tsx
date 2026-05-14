@@ -4,6 +4,7 @@ import { Pencil, Plus, Settings as SettingsIcon, Trash2, X } from "lucide-react"
 import { useEffect, useState } from "react";
 import type { Hormone } from "@/lib/types";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import NotificationToggle from "@/components/NotificationToggle";
 
 type HormoneForm = { name: string; unit: string; normalRange: string };
 type Modal =
@@ -13,9 +14,13 @@ type Modal =
 
 const emptyForm: HormoneForm = { name: "", unit: "", normalRange: "" };
 
-type TabId = "hormones";
+type TabId = "hormones" | "goal" | "notifications";
 
-const TABS: { id: TabId; label: string }[] = [{ id: "hormones", label: "Hormones" }];
+const TABS: { id: TabId; label: string }[] = [
+  { id: "hormones", label: "Hormones" },
+  { id: "goal", label: "Goal" },
+  { id: "notifications", label: "Reminders" },
+];
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<TabId>("hormones");
@@ -45,7 +50,52 @@ export default function Settings() {
       </div>
 
       {activeTab === "hormones" && <HormonesSection />}
+      {activeTab === "goal" && <GoalSection />}
     </div>
+  );
+}
+
+const GOAL_KEY = "medication_goal";
+const DEFAULT_GOAL = 80;
+
+function GoalSection() {
+  const [goal, setGoal] = useState<number>(DEFAULT_GOAL);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const raw = localStorage.getItem(GOAL_KEY);
+    const parsed = raw ? Number(raw) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) setGoal(parsed);
+  }, []);
+
+  function save(value: number) {
+    setGoal(value);
+    localStorage.setItem(GOAL_KEY, String(value));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1200);
+  }
+
+  return (
+    <section className="settings-section">
+      <div className="settings-section-head">
+        <h3>Adherence goal</h3>
+        {saved && <span className="goal-saved">Saved</span>}
+      </div>
+      <p className="labs-sub">
+        Your target % of medication days taken. Shown as a progress bar on the Calendar.
+      </p>
+      <div className="goal-input-row">
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={goal}
+          onChange={(e) => save(Number(e.target.value))}
+        />
+        <span className="goal-value">{goal}%</span>
+      </div>
+    </section>
   );
 }
 
