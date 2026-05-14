@@ -1,6 +1,5 @@
 const startDate = new Date("2024-11-12");
 const medicationCycle = 3;
-
 function updateStats() {
   const today = new Date();
   const year = today.getFullYear();
