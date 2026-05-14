@@ -419,17 +419,27 @@ h2 {
 }
 
 .icon-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  gap: 4px;
+  min-width: 32px;
   height: 32px;
+  padding: 0 6px;
   border: 1px solid rgba(213, 157, 128, 0.25);
   background-color: transparent;
   color: var(--text-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.action-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--main-color);
+  line-height: 1;
 }
 
 .icon-btn:hover {
@@ -474,6 +484,15 @@ h2 {
 .btn-primary:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.btn-primary.danger {
+  background-color: #ff6b6b;
+  color: #fff;
+}
+
+.btn-primary.danger:hover:not(:disabled) {
+  background-color: #e94f4f;
 }
 
 .btn-ghost {
@@ -790,10 +809,9 @@ h2 {
   cursor: default;
 }
 
-.image-viewer-close {
+.image-viewer-close,
+.image-viewer-nav {
   position: absolute;
-  top: 20px;
-  right: 20px;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -807,15 +825,61 @@ h2 {
   transition: background-color 0.15s ease;
 }
 
-.image-viewer-close:hover {
+.image-viewer-close {
+  top: 20px;
+  right: 20px;
+}
+
+.image-viewer-nav {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.image-viewer-nav.prev {
+  left: 16px;
+}
+
+.image-viewer-nav.next {
+  right: 16px;
+}
+
+.image-viewer-close:hover,
+.image-viewer-nav:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Make result-thumb buttons render like the anchors */
-button.result-thumb {
-  padding: 0;
-  border: 1px solid rgba(213, 157, 128, 0.2);
-  cursor: zoom-in;
+.image-viewer-counter {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+.image-viewer-pdf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ====== Confirm dialog ====== */
+
+.modal-confirm {
+  max-width: 380px;
+}
+
+.confirm-message {
+  color: rgba(198, 198, 208, 0.85);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 600px) {

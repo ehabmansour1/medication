@@ -1,6 +1,9 @@
 "use client";
 
 import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
   FileText,
   FlaskConical,
   Pencil,
@@ -13,6 +16,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Hormone, LabResult } from "@/lib/types";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 type ResultFormState = {
   date: string;
@@ -20,6 +24,8 @@ type ResultFormState = {
   notes: string;
   imageUrls: string[];
 };
+
+type Viewer = { urls: string[]; index: number } | null;
 
 function todayIso() {
   const d = new Date();
@@ -58,7 +64,8 @@ export default function Labs() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<Viewer>(null);
+  const [confirmDel, setConfirmDel] = useState<{ id: string; date: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -98,13 +105,24 @@ export default function Labs() {
   }, [activeId]);
 
   useEffect(() => {
-    if (!viewerUrl) return;
+    if (!viewer) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setViewerUrl(null);
+      if (!viewer) return;
+      if (e.key === "Escape") setViewer(null);
+      if (e.key === "ArrowRight") {
+        setViewer((v) =>
+          v ? { ...v, index: (v.index + 1) % v.urls.length } : v
+        );
+      }
+      if (e.key === "ArrowLeft") {
+        setViewer((v) =>
+          v ? { ...v, index: (v.index - 1 + v.urls.length) % v.urls.length } : v
+        );
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [viewerUrl]);
+  }, [viewer]);
 
   const activeHormone = useMemo(
     () => hormones.find((h) => h._id === activeId) ?? null,
@@ -177,14 +195,15 @@ export default function Labs() {
     }
   }
 
-  async function deleteResult(id: string) {
-    if (!confirm("Delete this result?")) return;
+  async function performDelete(id: string) {
     try {
       const res = await fetch(`/api/results/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setResults((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete");
+    } finally {
+      setConfirmDel(null);
     }
   }
 
@@ -228,6 +247,8 @@ export default function Labs() {
         : prev
     );
   }
+
+  const viewerCurrent = viewer ? viewer.urls[viewer.index] : null;
 
   return (
     <div className="labs">
@@ -292,6 +313,7 @@ export default function Labs() {
             {results.map((r) => {
               const out =
                 r.value !== null && range && (r.value < range[0] || r.value > range[1]);
+              const hasFiles = r.imageUrls.length > 0;
               return (
                 <li key={r._id} className="result-card">
                   <div className="result-top">
@@ -305,6 +327,19 @@ export default function Labs() {
                       )}
                     </div>
                     <div className="result-actions">
+                      {hasFiles && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          aria-label={`View ${r.imageUrls.length} attachment${r.imageUrls.length > 1 ? "s" : ""}`}
+                          onClick={() => setViewer({ urls: r.imageUrls, index: 0 })}
+                        >
+                          <Eye size={14} />
+                          {r.imageUrls.length > 1 && (
+                            <span className="action-badge">{r.imageUrls.length}</span>
+                          )}
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="icon-btn"
@@ -328,43 +363,13 @@ export default function Labs() {
                         type="button"
                         className="icon-btn danger"
                         aria-label="Delete result"
-                        onClick={() => deleteResult(r._id)}
+                        onClick={() => setConfirmDel({ id: r._id, date: r.date })}
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
                   {r.notes && <p className="result-notes">{r.notes}</p>}
-                  {r.imageUrls.length > 0 && (
-                    <div className="result-images">
-                      {r.imageUrls.map((url) =>
-                        isPdf(url) ? (
-                          <a
-                            key={url}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="result-thumb"
-                          >
-                            <span className="pdf-thumb">
-                              <FileText size={20} /> PDF
-                            </span>
-                          </a>
-                        ) : (
-                          <button
-                            type="button"
-                            key={url}
-                            className="result-thumb"
-                            onClick={() => setViewerUrl(url)}
-                            aria-label="View image"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={url} alt="result" />
-                          </button>
-                        )
-                      )}
-                    </div>
-                  )}
                 </li>
               );
             })}
@@ -486,19 +491,83 @@ export default function Labs() {
         </div>
       )}
 
-      {viewerUrl && (
-        <div className="image-viewer" onClick={() => setViewerUrl(null)}>
+      {viewer && viewerCurrent && (
+        <div className="image-viewer" onClick={() => setViewer(null)}>
           <button
             type="button"
             className="image-viewer-close"
             aria-label="Close"
-            onClick={() => setViewerUrl(null)}
+            onClick={() => setViewer(null)}
           >
             <X size={24} />
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={viewerUrl} alt="result" onClick={(e) => e.stopPropagation()} />
+
+          {viewer.urls.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="image-viewer-nav prev"
+                aria-label="Previous"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewer((v) =>
+                    v ? { ...v, index: (v.index - 1 + v.urls.length) % v.urls.length } : v
+                  );
+                }}
+              >
+                <ChevronLeft size={28} />
+              </button>
+              <button
+                type="button"
+                className="image-viewer-nav next"
+                aria-label="Next"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewer((v) =>
+                    v ? { ...v, index: (v.index + 1) % v.urls.length } : v
+                  );
+                }}
+              >
+                <ChevronRight size={28} />
+              </button>
+              <div className="image-viewer-counter" onClick={(e) => e.stopPropagation()}>
+                {viewer.index + 1} / {viewer.urls.length}
+              </div>
+            </>
+          )}
+
+          {isPdf(viewerCurrent) ? (
+            <div className="image-viewer-pdf" onClick={(e) => e.stopPropagation()}>
+              <FileText size={56} />
+              <a
+                href={viewerCurrent}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+              >
+                Open PDF in new tab
+              </a>
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={viewerCurrent}
+              alt="result"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
         </div>
+      )}
+
+      {confirmDel && (
+        <ConfirmDialog
+          title="Delete result?"
+          message={`This will permanently delete the result from ${confirmDel.date}.`}
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => performDelete(confirmDel.id)}
+          onCancel={() => setConfirmDel(null)}
+        />
       )}
     </div>
   );

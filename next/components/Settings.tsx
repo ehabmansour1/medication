@@ -3,6 +3,7 @@
 import { Pencil, Plus, Settings as SettingsIcon, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Hormone } from "@/lib/types";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 type HormoneForm = { name: string; unit: string; normalRange: string };
 type Modal =
@@ -53,6 +54,7 @@ function HormonesSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<Modal>(null);
+  const [confirmDel, setConfirmDel] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -104,14 +106,15 @@ function HormonesSection() {
     }
   }
 
-  async function remove(id: string) {
-    if (!confirm("Delete this hormone and all its results?")) return;
+  async function performDelete(id: string) {
     try {
       const res = await fetch(`/api/hormones/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setHormones((prev) => prev.filter((h) => h._id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete");
+    } finally {
+      setConfirmDel(null);
     }
   }
 
@@ -167,7 +170,7 @@ function HormonesSection() {
                     type="button"
                     className="icon-btn danger"
                     aria-label="Delete"
-                    onClick={() => remove(h._id)}
+                    onClick={() => setConfirmDel({ id: h._id, name: h.name })}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -238,6 +241,17 @@ function HormonesSection() {
             </div>
           </div>
         </div>
+      )}
+
+      {confirmDel && (
+        <ConfirmDialog
+          title="Delete hormone?"
+          message={`This will permanently delete "${confirmDel.name}" and all its lab results.`}
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => performDelete(confirmDel.id)}
+          onCancel={() => setConfirmDel(null)}
+        />
       )}
     </>
   );
