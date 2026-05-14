@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CalendarDays, Sparkles, type LucideIcon } from "lucide-react";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: string;
+  Icon: LucideIcon;
 };
 
 const items: NavItem[] = [
-  { href: "/", label: "Main", icon: "📅" },
-  { href: "/other", label: "Coming soon", icon: "✨" },
+  { href: "/", label: "Calendar", Icon: CalendarDays },
+  { href: "/other", label: "Soon", Icon: Sparkles },
 ];
 
 export default function BottomNav() {
@@ -19,23 +20,26 @@ export default function BottomNav() {
 
   return (
     <nav className="bottom-nav" aria-label="Primary">
-      {items.map((item) => {
-        const isActive =
-          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={isActive ? "active" : undefined}
-            aria-current={isActive ? "page" : undefined}
-          >
-            <span className="nav-icon" aria-hidden="true">
-              {item.icon}
-            </span>
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
+      <ul className="bottom-nav-list">
+        {items.map(({ href, label, Icon }) => {
+          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          return (
+            <li key={href} className="bottom-nav-item">
+              <Link
+                href={href}
+                className={`bottom-nav-link${isActive ? " active" : ""}`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <span className="bottom-nav-icon-wrap">
+                  <Icon size={22} strokeWidth={isActive ? 2.4 : 2} aria-hidden="true" />
+                </span>
+                <span className="bottom-nav-label">{label}</span>
+                <span className="bottom-nav-indicator" aria-hidden="true" />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

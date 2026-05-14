@@ -167,38 +167,96 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  height: var(--nav-height);
-  background-color: rgba(13, 29, 37, 0.95);
-  backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(213, 157, 128, 0.2);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background-color: rgba(13, 29, 37, 0.85);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-top: 1px solid rgba(213, 157, 128, 0.12);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
   z-index: 50;
 }
 
-.bottom-nav a {
-  flex: 1;
-  height: 100%;
+.bottom-nav-list {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0 8px;
+  height: var(--nav-height);
+  max-width: 600px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-color);
-  text-decoration: none;
-  font-size: 0.8rem;
-  transition: color 0.2s;
+  align-items: stretch;
 }
 
-.bottom-nav a.active {
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+}
+
+.bottom-nav-link {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+  color: rgba(198, 198, 208, 0.7);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-radius: 12px;
+  transition: color 0.2s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-link:hover {
+  color: var(--main-color);
+}
+
+.bottom-nav-link:active {
+  transform: scale(0.96);
+}
+
+.bottom-nav-link.active {
   color: var(--active-color);
 }
 
-.bottom-nav .nav-icon {
-  font-size: 1.2rem;
+.bottom-nav-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 28px;
+  border-radius: 999px;
+  transition: background-color 0.25s ease;
+}
+
+.bottom-nav-link.active .bottom-nav-icon-wrap {
+  background-color: rgba(255, 89, 0, 0.14);
+}
+
+.bottom-nav-label {
   line-height: 1;
+}
+
+.bottom-nav-indicator {
+  position: absolute;
+  top: 6px;
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.bottom-nav-link.active .bottom-nav-indicator {
+  background-color: var(--active-color);
+}
+
+.bottom-nav-link:focus-visible {
+  outline: 2px solid var(--active-color);
+  outline-offset: 2px;
 }
 
 .placeholder-page {
