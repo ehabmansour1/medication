@@ -1,0 +1,10 @@
+# env (any level)
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# OS
+.DS_Store
+*.pem
