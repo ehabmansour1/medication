@@ -14,9 +14,15 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Hormone, LabResult } from "@/lib/types";
 import ConfirmDialog from "@/components/ConfirmDialog";
+
+const PdfViewer = dynamic(() => import("@/components/PdfViewer"), {
+  ssr: false,
+  loading: () => <p className="pdf-message">Loading PDF…</p>,
+});
 
 type ResultFormState = {
   date: string;
@@ -538,11 +544,7 @@ export default function Labs() {
 
           {isPdf(viewerCurrent) ? (
             <div className="image-viewer-pdf" onClick={(e) => e.stopPropagation()}>
-              <iframe
-                src={`${viewerCurrent}#toolbar=1&view=FitH`}
-                title="PDF result"
-                className="image-viewer-pdf-frame"
-              />
+              <PdfViewer url={viewerCurrent} />
               <a
                 href={viewerCurrent}
                 target="_blank"
