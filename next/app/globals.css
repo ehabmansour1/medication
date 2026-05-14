@@ -261,10 +261,44 @@ h2 {
   max-width: 800px;
   width: 100%;
   margin: 0 auto;
+  padding: 24px 20px 8px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   color: var(--text-color);
+}
+
+@media (max-width: 600px) {
+  .labs {
+    padding: 18px 14px 8px;
+    gap: 14px;
+  }
+
+  .labs-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .modal {
+    padding: 16px;
+    max-height: 88vh;
+  }
+
+  .settings-section {
+    padding: 14px;
+  }
+
+  .hormone-row {
+    padding: 12px 14px;
+  }
+
+  .result-card {
+    padding: 14px;
+  }
+
+  .hormone-tab {
+    padding: 8px 14px;
+    font-size: 0.88rem;
+  }
 }
 
 .labs-header h2 {

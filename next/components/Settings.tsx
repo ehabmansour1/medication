@@ -12,7 +12,43 @@ type Modal =
 
 const emptyForm: HormoneForm = { name: "", unit: "", normalRange: "" };
 
+type TabId = "hormones";
+
+const TABS: { id: TabId; label: string }[] = [{ id: "hormones", label: "Hormones" }];
+
 export default function Settings() {
+  const [activeTab, setActiveTab] = useState<TabId>("hormones");
+
+  return (
+    <div className="labs">
+      <header className="labs-header">
+        <h2>
+          <SettingsIcon size={22} strokeWidth={2.2} /> Settings
+        </h2>
+        <p className="labs-sub">Manage your data</p>
+      </header>
+
+      <div className="hormone-tabs" role="tablist">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={`hormone-tab${activeTab === tab.id ? " active" : ""}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "hormones" && <HormonesSection />}
+    </div>
+  );
+}
+
+function HormonesSection() {
   const [hormones, setHormones] = useState<Hormone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,14 +116,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="labs">
-      <header className="labs-header">
-        <h2>
-          <SettingsIcon size={22} strokeWidth={2.2} /> Settings
-        </h2>
-        <p className="labs-sub">Manage your hormone tabs</p>
-      </header>
-
+    <>
       {error && <p className="labs-error">{error}</p>}
 
       <section className="settings-section">
@@ -210,6 +239,6 @@ export default function Settings() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

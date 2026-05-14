@@ -48,10 +48,18 @@ export async function POST(request: Request) {
   }
 
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const blob = await put(`lab-results/${Date.now()}-${safeName}`, file, {
-    access: "public",
-    contentType: file.type,
-  });
-
-  return NextResponse.json({ url: blob.url });
+  try {
+    const blob = await put(`lab-results/${Date.now()}-${safeName}`, file, {
+      access: "public",
+      contentType: file.type,
+    });
+    return NextResponse.json({ url: blob.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[upload] blob put failed:", message);
+    return NextResponse.json(
+      { error: `Upload failed: ${message}` },
+      { status: 500 }
+    );
+  }
 }

@@ -270,18 +270,6 @@ export default function Labs() {
 
       {activeHormone && (
         <>
-          <section className="hormone-card readonly">
-            <div className="hormone-card-main">
-              <h3>{activeHormone.name}</h3>
-              <div className="hormone-meta">
-                {activeHormone.unit && <span>Unit: {activeHormone.unit}</span>}
-                {activeHormone.normalRange && (
-                  <span>Normal: {activeHormone.normalRange}</span>
-                )}
-              </div>
-            </div>
-          </section>
-
           <div className="results-toolbar">
             <button
               type="button"
