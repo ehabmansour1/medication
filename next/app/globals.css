@@ -232,10 +232,6 @@ h2 {
   transition: background-color 0.25s ease;
 }
 
-.bottom-nav-link.active .bottom-nav-icon-wrap {
-  background-color: rgba(255, 89, 0, 0.14);
-}
-
 .bottom-nav-label {
   line-height: 1;
 }
