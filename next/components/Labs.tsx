@@ -538,14 +538,18 @@ export default function Labs() {
 
           {isPdf(viewerCurrent) ? (
             <div className="image-viewer-pdf" onClick={(e) => e.stopPropagation()}>
-              <FileText size={56} />
+              <iframe
+                src={`${viewerCurrent}#toolbar=1&view=FitH`}
+                title="PDF result"
+                className="image-viewer-pdf-frame"
+              />
               <a
                 href={viewerCurrent}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary"
+                className="image-viewer-pdf-fallback"
               >
-                Open PDF in new tab
+                <FileText size={14} /> Open in new tab
               </a>
             </div>
           ) : (
