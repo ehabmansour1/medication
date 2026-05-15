@@ -38,6 +38,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // API callers expect JSON; HTML pages get a redirect to /login.
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL("/login", req.url);
   if (pathname !== "/") {
     url.searchParams.set("redirect", pathname);

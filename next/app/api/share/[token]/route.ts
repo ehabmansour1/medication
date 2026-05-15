@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getDb } from "@/lib/mongodb";
+import { SESSION_COOKIE, verifySession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,6 +13,12 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const c = await cookies();
+  const userId = await verifySession(c.get(SESSION_COOKIE)?.value);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { token } = await params;
   const db = await getDb();
   const res = await db.collection(COLLECTION).deleteOne({

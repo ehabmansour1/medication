@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { getDb } from "@/lib/mongodb";
+import { SESSION_COOKIE, verifySession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,7 +14,17 @@ function newToken(): string {
   return randomBytes(24).toString("base64url");
 }
 
+async function requireAuth() {
+  const c = await cookies();
+  const userId = await verifySession(c.get(SESSION_COOKIE)?.value);
+  return userId;
+}
+
 export async function GET() {
+  const userId = await requireAuth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const db = await getDb();
   const tokens = await db
     .collection(COLLECTION)
@@ -36,6 +48,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const userId = await requireAuth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const body = (await request.json().catch(() => ({}))) as {
     label?: unknown;
     expiresInDays?: unknown;
