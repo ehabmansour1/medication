@@ -62,24 +62,48 @@ export default function Settings() {
   );
 }
 
-const GOAL_KEY = "medication_goal";
 const DEFAULT_GOAL = 80;
 
 function GoalSection() {
   const [goal, setGoal] = useState<number>(DEFAULT_GOAL);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem(GOAL_KEY);
-    const parsed = raw ? Number(raw) : NaN;
-    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) setGoal(parsed);
+    (async () => {
+      try {
+        const res = await fetch("/api/preferences", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { goal: number };
+        if (Number.isFinite(data.goal)) setGoal(data.goal);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load");
+      } finally {
+        setLoaded(true);
+      }
+    })();
   }, []);
 
-  function save(value: number) {
+  async function save(value: number) {
     setGoal(value);
-    localStorage.setItem(GOAL_KEY, String(value));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1200);
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: value }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1200);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -87,10 +111,12 @@ function GoalSection() {
       <div className="settings-section-head">
         <h3>Adherence goal</h3>
         {saved && <span className="goal-saved">Saved</span>}
+        {saving && !saved && <span className="labs-sub">Saving…</span>}
       </div>
       <p className="labs-sub">
         Your target % of medication days taken. Shown as a progress bar on the Calendar.
       </p>
+      {error && <p className="labs-error">{error}</p>}
       <div className="goal-input-row">
         <input
           type="range"
@@ -98,6 +124,7 @@ function GoalSection() {
           max={100}
           step={5}
           value={goal}
+          disabled={!loaded}
           onChange={(e) => save(Number(e.target.value))}
         />
         <span className="goal-value">{goal}%</span>

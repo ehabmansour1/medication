@@ -4,12 +4,11 @@ import { Flame, Target } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { computeStreak } from "@/lib/streak";
 import { vibrate } from "@/lib/haptic";
-import { celebrateIfMilestone } from "@/lib/celebrate";
+import { fireConfetti, STREAK_MILESTONES } from "@/lib/celebrate";
 
 const START_DATE = new Date("2024-11-12");
 const MEDICATION_CYCLE = 3;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const GOAL_KEY = "medication_goal";
 const DEFAULT_GOAL = 80;
 
 function toDateString(date: Date): string {
@@ -55,21 +54,29 @@ export default function Calendar() {
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [goal, setGoal] = useState<number>(DEFAULT_GOAL);
-
-  useEffect(() => {
-    const raw = typeof window !== "undefined" ? localStorage.getItem(GOAL_KEY) : null;
-    const parsed = raw ? Number(raw) : NaN;
-    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) setGoal(parsed);
-  }, []);
+  const celebratedRef = useRef<Set<number>>(new Set());
+  const prefsLoadedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/medications", { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as { taken: string[] };
-        if (!cancelled) setTaken(new Set(data.taken));
+        const [med, prefs] = await Promise.all([
+          fetch("/api/medications", { cache: "no-store" }),
+          fetch("/api/preferences", { cache: "no-store" }),
+        ]);
+        if (!med.ok) throw new Error(`Doses HTTP ${med.status}`);
+        if (!prefs.ok) throw new Error(`Prefs HTTP ${prefs.status}`);
+        const medData = (await med.json()) as { taken: string[] };
+        const prefsData = (await prefs.json()) as {
+          goal: number;
+          celebratedMilestones: number[];
+        };
+        if (cancelled) return;
+        setTaken(new Set(medData.taken));
+        setGoal(prefsData.goal);
+        celebratedRef.current = new Set(prefsData.celebratedMilestones);
+        prefsLoadedRef.current = true;
       } catch (err) {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "Failed to load");
       }
@@ -89,12 +96,23 @@ export default function Calendar() {
     [taken]
   );
 
-  const lastCelebratedRef = useRef<number>(0);
   useEffect(() => {
-    if (streak.current > lastCelebratedRef.current) {
-      celebrateIfMilestone(streak.current);
-      lastCelebratedRef.current = streak.current;
-    }
+    if (!prefsLoadedRef.current) return;
+    if (!STREAK_MILESTONES.includes(streak.current)) return;
+    if (celebratedRef.current.has(streak.current)) return;
+
+    const newSet = new Set(celebratedRef.current);
+    newSet.add(streak.current);
+    celebratedRef.current = newSet;
+
+    void fireConfetti();
+    void fetch("/api/preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ celebratedMilestones: Array.from(newSet) }),
+    }).catch(() => {
+      /* best-effort */
+    });
   }, [streak.current]);
 
   const goalProgress = Math.min(100, Math.round((adherenceRate / Math.max(goal, 1)) * 100));
@@ -159,7 +177,7 @@ export default function Calendar() {
         </div>
 
         {loadError && (
-          <p style={{ color: "#ff8080", textAlign: "center", marginBottom: 8 }}>
+          <p style={{ color: "#e08484", textAlign: "center", marginBottom: 8 }}>
             {loadError}
           </p>
         )}
