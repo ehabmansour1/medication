@@ -24,9 +24,9 @@ body {
 
 body {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 10px 10px calc(var(--nav-height) + 20px);
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 calc(var(--nav-height) + 20px);
 }
 
 .container {
@@ -1183,21 +1183,41 @@ h2 {
 /* ====== Install banner ====== */
 
 .install-banner {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 60;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background-color: rgba(255, 89, 0, 0.12);
+  background-color: rgba(13, 29, 37, 0.92);
   border-bottom: 1px solid rgba(255, 89, 0, 0.3);
   color: var(--text-color);
-  backdrop-filter: blur(10px);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+}
+
+/* Reserve top space only when the banner is in the DOM. */
+body:has(.install-banner) {
+  padding-top: 64px;
+}
+
+@media (max-width: 600px) {
+  body:has(.install-banner) {
+    padding-top: 56px;
+  }
+}
+
+.install-banner > svg {
+  flex-shrink: 0;
+  color: var(--main-color);
 }
 
 .install-text {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   font-size: 0.85rem;
@@ -1206,16 +1226,24 @@ h2 {
 
 .install-text strong {
   color: var(--main-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .install-text span {
   color: rgba(198, 198, 208, 0.7);
   font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .install-banner .btn-primary {
   padding: 6px 12px;
   font-size: 0.8rem;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .install-close {
@@ -1223,13 +1251,62 @@ h2 {
   border: none;
   color: rgba(198, 198, 208, 0.6);
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .install-close:hover {
   color: var(--text-color);
+}
+
+@media (max-width: 600px) {
+  .install-banner {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .install-banner > svg {
+    display: none;
+  }
+
+  .install-text {
+    font-size: 0.8rem;
+  }
+
+  .install-text strong {
+    font-size: 0.82rem;
+  }
+
+  .install-text span {
+    display: none;
+  }
+
+  .install-banner .btn-primary {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+
+  .install-close {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .install-banner {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .install-text strong {
+    font-size: 0.78rem;
+  }
+
+  .install-banner .btn-primary {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
 }
 
 /* ====== Notification toggle ====== */
