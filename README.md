@@ -1,5 +1,6 @@
 # medication
 
+
 Repository contains two versions of the medication tracker:
 
 - **`/` (root)** — the original static HTML/CSS/JS PWA.
@@ -13,6 +14,7 @@ npm install
 cp .env.example .env.local   # then fill in your MongoDB URI
 npm run dev
 ```
+
 
 ## Vercel deployment
 
