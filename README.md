@@ -1,5 +1,6 @@
 # medication
 
+
 Repository contains two versions of the medication tracker:
 
 - **`/` (root)** — the original static HTML/CSS/JS PWA.
