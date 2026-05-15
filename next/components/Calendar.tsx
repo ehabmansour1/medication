@@ -1,9 +1,10 @@
 "use client";
 
 import { Flame, Target } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { computeStreak } from "@/lib/streak";
 import { vibrate } from "@/lib/haptic";
+import { celebrateIfMilestone } from "@/lib/celebrate";
 
 const START_DATE = new Date("2024-11-12");
 const MEDICATION_CYCLE = 3;
@@ -88,6 +89,14 @@ export default function Calendar() {
     [taken]
   );
 
+  const lastCelebratedRef = useRef<number>(0);
+  useEffect(() => {
+    if (streak.current > lastCelebratedRef.current) {
+      celebrateIfMilestone(streak.current);
+      lastCelebratedRef.current = streak.current;
+    }
+  }, [streak.current]);
+
   const goalProgress = Math.min(100, Math.round((adherenceRate / Math.max(goal, 1)) * 100));
   const goalMet = adherenceRate >= goal;
 
@@ -117,12 +126,7 @@ export default function Calendar() {
   return (
     <div className="container">
       <div>
-        <h2>Medication Tracker</h2>
         <div className="stats">
-          <div className="stat-card">
-            <h3>Rate</h3>
-            <p>{adherenceRate}%</p>
-          </div>
           <div className="stat-card">
             <h3>Doses This Month</h3>
             <p>
@@ -136,22 +140,21 @@ export default function Calendar() {
             <p>{streak.current}</p>
             <small>Best: {streak.longest}</small>
           </div>
-        </div>
-
-        <div className="goal-card">
-          <div className="goal-head">
-            <span>
-              <Target size={14} /> Goal: {goal}%
-            </span>
-            <span className={goalMet ? "goal-met" : ""}>
-              {goalMet ? "✓ Met" : `${adherenceRate}%`}
-            </span>
-          </div>
-          <div className="goal-bar">
-            <div
-              className={`goal-fill${goalMet ? " met" : ""}`}
-              style={{ width: `${goalProgress}%` }}
-            />
+          <div className="goal-card">
+            <div className="goal-head">
+              <span>
+                <Target size={14} /> Goal: {goal}%
+              </span>
+              <span className={goalMet ? "goal-met" : ""}>
+                {goalMet ? `✓ Met (${adherenceRate}%)` : `${adherenceRate}%`}
+              </span>
+            </div>
+            <div className="goal-bar">
+              <div
+                className={`goal-fill${goalMet ? " met" : ""}`}
+                style={{ width: `${goalProgress}%` }}
+              />
+            </div>
           </div>
         </div>
 

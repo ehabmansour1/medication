@@ -267,7 +267,7 @@ export default function Labs() {
         <h2>
           <FlaskConical size={22} strokeWidth={2.2} /> Labs
         </h2>
-        <p className="labs-sub">Track hormone results over time</p>
+        {/* <p className="labs-sub">Track hormone results over time</p> */}
       </header>
 
       {error && <p className="labs-error">{error}</p>}

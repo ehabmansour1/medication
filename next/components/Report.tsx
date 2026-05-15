@@ -195,7 +195,7 @@ export default function Report() {
                           <ReferenceArea
                             y1={range[0]}
                             y2={range[1]}
-                            fill="#4caf50"
+                            fill="#87a96b"
                             fillOpacity={0.15}
                           />
                         )}

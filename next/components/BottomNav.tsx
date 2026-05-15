@@ -25,6 +25,8 @@ const items: NavItem[] = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  if (pathname?.startsWith("/share/")) return null;
+  if (pathname === "/login") return null;
 
   return (
     <nav className="bottom-nav" aria-label="Primary">

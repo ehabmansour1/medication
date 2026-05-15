@@ -4,8 +4,8 @@
   "description": "A simple calendar for tracking medication",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d1d25",
-  "theme_color": "#0d1d25",
+  "background_color": "#16191f",
+  "theme_color": "#16191f",
   "icons": [
     {
       "src": "/images/1098028.png",

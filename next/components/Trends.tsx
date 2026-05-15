@@ -144,7 +144,7 @@ export default function Trends() {
         <h2>
           <LineIcon size={22} strokeWidth={2.2} /> Trends
         </h2>
-        <p className="labs-sub">Adherence and lab results over time</p>
+        {/* <p className="labs-sub">Adherence and lab results over time</p> */}
       </header>
 
       {error && <p className="labs-error">{error}</p>}
@@ -246,45 +246,45 @@ function HormoneChart({ hormone, results }: { hormone: Hormone; results: LabResu
       <div className="chart-wrap">
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(213,157,128,0.12)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(227,176,141,0.12)" />
             <XAxis
               dataKey="date"
-              tick={{ fill: "rgba(198,198,208,0.7)", fontSize: 11 }}
+              tick={{ fill: "rgba(217,212,206,0.7)", fontSize: 11 }}
               tickFormatter={(d) => d.slice(5)}
-              stroke="rgba(213,157,128,0.25)"
+              stroke="rgba(227,176,141,0.25)"
             />
             <YAxis
               domain={[yMin, yMax]}
-              tick={{ fill: "rgba(198,198,208,0.7)", fontSize: 11 }}
-              stroke="rgba(213,157,128,0.25)"
+              tick={{ fill: "rgba(217,212,206,0.7)", fontSize: 11 }}
+              stroke="rgba(227,176,141,0.25)"
             />
             {range && (
               <ReferenceArea
                 y1={range[0]}
                 y2={range[1]}
-                fill="#4caf50"
+                fill="#87a96b"
                 fillOpacity={0.12}
-                stroke="#4caf50"
+                stroke="#87a96b"
                 strokeOpacity={0.25}
                 strokeDasharray="3 3"
               />
             )}
             <Tooltip
               contentStyle={{
-                backgroundColor: "#0d1d25",
-                border: "1px solid rgba(213,157,128,0.3)",
+                backgroundColor: "#16191f",
+                border: "1px solid rgba(227,176,141,0.3)",
                 borderRadius: 8,
-                color: "#c6c6d0",
+                color: "#d9d4ce",
               }}
-              labelStyle={{ color: "#d59d80" }}
+              labelStyle={{ color: "#e3b08d" }}
               formatter={(v: number) => [`${v}${hormone.unit ? " " + hormone.unit : ""}`, hormone.name]}
             />
             <Line
               type="monotone"
               dataKey="value"
-              stroke="#d59d80"
+              stroke="#e3b08d"
               strokeWidth={2.5}
-              dot={{ fill: "#ff5900", r: 4, strokeWidth: 0 }}
+              dot={{ fill: "#d97757", r: 4, strokeWidth: 0 }}
               activeDot={{ r: 6 }}
             />
           </LineChart>

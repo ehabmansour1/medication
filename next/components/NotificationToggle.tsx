@@ -15,12 +15,31 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 
 type Status = "loading" | "unsupported" | "off" | "on" | "denied";
 
+type Prefs = {
+  preferredHour: number;
+  eveningHour: number | null;
+  timezone: string;
+};
+
+const DEFAULT_PREFS: Prefs = {
+  preferredHour: 9,
+  eveningHour: null,
+  timezone:
+    typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+      : "UTC",
+};
+
 export default function NotificationToggle() {
   const [status, setStatus] = useState<Status>("loading");
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
+  const [eveningEnabled, setEveningEnabled] = useState(false);
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefsSaved, setPrefsSaved] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -47,6 +66,7 @@ export default function NotificationToggle() {
         if (sub) {
           setSubscription(sub);
           setStatus("on");
+          await loadPrefs(sub.endpoint);
         } else {
           setStatus("off");
         }
@@ -56,6 +76,26 @@ export default function NotificationToggle() {
       }
     })();
   }, []);
+
+  async function loadPrefs(endpoint: string) {
+    try {
+      const res = await fetch(`/api/push/subscribe?endpoint=${encodeURIComponent(endpoint)}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as Partial<Prefs>;
+      setPrefs({
+        preferredHour:
+          typeof data.preferredHour === "number" ? data.preferredHour : DEFAULT_PREFS.preferredHour,
+        eveningHour: typeof data.eveningHour === "number" ? data.eveningHour : null,
+        timezone:
+          typeof data.timezone === "string" && data.timezone.length > 0
+            ? data.timezone
+            : DEFAULT_PREFS.timezone,
+      });
+      setEveningEnabled(typeof data.eveningHour === "number");
+    } catch {
+      /* keep defaults */
+    }
+  }
 
   async function enable() {
     setBusy(true);
@@ -84,13 +124,20 @@ export default function NotificationToggle() {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const saveRes = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sub.toJSON()),
+        body: JSON.stringify({
+          ...sub.toJSON(),
+          preferredHour: DEFAULT_PREFS.preferredHour,
+          eveningHour: null,
+          timezone: tz,
+        }),
       });
       if (!saveRes.ok) throw new Error(`Save subscription failed (${saveRes.status})`);
 
+      setPrefs({ ...DEFAULT_PREFS, timezone: tz });
       setSubscription(sub);
       setStatus("on");
     } catch (err) {
@@ -141,13 +188,39 @@ export default function NotificationToggle() {
     }
   }
 
+  async function savePrefs(next: Prefs, eveningOn: boolean) {
+    if (!subscription) return;
+    setPrefsSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/push/subscribe", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+          preferredHour: next.preferredHour,
+          eveningHour: eveningOn ? next.eveningHour ?? 19 : null,
+          timezone: next.timezone,
+        }),
+      });
+      if (!res.ok) throw new Error(`Save failed (${res.status})`);
+      setPrefsSaved(true);
+      setTimeout(() => setPrefsSaved(false), 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setPrefsSaving(false);
+    }
+  }
+
   return (
     <section className="settings-section">
       <div className="settings-section-head">
         <h3>Medication reminders</h3>
       </div>
       <p className="labs-sub">
-        Get a push notification at ~9 AM Cairo time on medication days, only if you haven&apos;t marked today as taken yet.
+        Get a push notification on medication days at your preferred time, only if you haven&apos;t
+        marked today as taken yet.
       </p>
 
       {error && <p className="labs-error">{error}</p>}
@@ -156,13 +229,15 @@ export default function NotificationToggle() {
 
       {status === "unsupported" && (
         <p className="labs-empty small">
-          This browser doesn&apos;t support web push. On iOS, install the app to your home screen first.
+          This browser doesn&apos;t support web push. On iOS, install the app to your home screen
+          first.
         </p>
       )}
 
       {status === "denied" && (
         <p className="labs-empty small">
-          Notifications are blocked. Enable them in your browser settings for this site, then refresh.
+          Notifications are blocked. Enable them in your browser settings for this site, then
+          refresh.
         </p>
       )}
 
@@ -173,15 +248,75 @@ export default function NotificationToggle() {
       )}
 
       {status === "on" && (
-        <div className="notif-actions">
-          <button type="button" className="btn-ghost" onClick={disable} disabled={busy}>
-            <BellOff size={16} /> {busy ? "Disabling…" : "Disable"}
-          </button>
-          <button type="button" className="btn-primary" onClick={sendTest}>
-            <Send size={14} /> Send test
-          </button>
-          {testStatus && <span className="notif-status">{testStatus}</span>}
-        </div>
+        <>
+          <div className="notif-actions">
+            <button type="button" className="btn-ghost" onClick={disable} disabled={busy}>
+              <BellOff size={16} /> {busy ? "Disabling…" : "Disable"}
+            </button>
+            <button type="button" className="btn-primary" onClick={sendTest}>
+              <Send size={14} /> Send test
+            </button>
+            {testStatus && <span className="notif-status">{testStatus}</span>}
+          </div>
+
+          <div className="notif-prefs">
+            <label className="field">
+              <span>Morning reminder time</span>
+              <select
+                value={prefs.preferredHour}
+                onChange={(e) => {
+                  const next = { ...prefs, preferredHour: Number(e.target.value) };
+                  setPrefs(next);
+                  savePrefs(next, eveningEnabled);
+                }}
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>
+                    {String(h).padStart(2, "0")}:00
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field notif-evening-toggle">
+              <input
+                type="checkbox"
+                checked={eveningEnabled}
+                onChange={(e) => {
+                  setEveningEnabled(e.target.checked);
+                  savePrefs(prefs, e.target.checked);
+                }}
+              />
+              <span>Send an evening nudge if not taken</span>
+            </label>
+
+            {eveningEnabled && (
+              <label className="field">
+                <span>Evening nudge time</span>
+                <select
+                  value={prefs.eveningHour ?? 19}
+                  onChange={(e) => {
+                    const next = { ...prefs, eveningHour: Number(e.target.value) };
+                    setPrefs(next);
+                    savePrefs(next, true);
+                  }}
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            <p className="labs-sub notif-tz">
+              Timezone: {prefs.timezone}
+              {prefsSaving && " · saving…"}
+              {prefsSaved && " · saved ✓"}
+            </p>
+          </div>
+        </>
       )}
     </section>
   );

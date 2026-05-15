@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import type { Hormone } from "@/lib/types";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import NotificationToggle from "@/components/NotificationToggle";
+import SecuritySection from "@/components/SecuritySection";
+import ShareSection from "@/components/ShareSection";
 
 type HormoneForm = { name: string; unit: string; normalRange: string };
 type Modal =
@@ -14,12 +16,14 @@ type Modal =
 
 const emptyForm: HormoneForm = { name: "", unit: "", normalRange: "" };
 
-type TabId = "hormones" | "goal" | "notifications";
+type TabId = "hormones" | "goal" | "notifications" | "security" | "share";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "hormones", label: "Hormones" },
   { id: "goal", label: "Goal" },
   { id: "notifications", label: "Reminders" },
+  { id: "security", label: "Security" },
+  { id: "share", label: "Share" },
 ];
 
 export default function Settings() {
@@ -31,7 +35,7 @@ export default function Settings() {
         <h2>
           <SettingsIcon size={22} strokeWidth={2.2} /> Settings
         </h2>
-        <p className="labs-sub">Manage your data</p>
+        {/* <p className="labs-sub">Manage your data</p> */}
       </header>
 
       <div className="hormone-tabs" role="tablist">
@@ -52,6 +56,8 @@ export default function Settings() {
       {activeTab === "hormones" && <HormonesSection />}
       {activeTab === "goal" && <GoalSection />}
       {activeTab === "notifications" && <NotificationToggle />}
+      {activeTab === "security" && <SecuritySection />}
+      {activeTab === "share" && <ShareSection />}
     </div>
   );
 }

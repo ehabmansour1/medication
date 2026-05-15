@@ -62,3 +62,26 @@ Already configured in `next/vercel.json` to fire at `0 6 * * *` UTC (≈ 9 AM Ca
 3. Tap **Send test** to confirm it works.
 
 **iOS note:** On iOS 16.4+, web push only works after you **install the PWA to your home screen** (Share → Add to Home Screen). Until then, the toggle reports "unsupported".
+
+### Authentication
+
+The whole app (except `/share/<token>` doctor links and `/api/cron/*`) is gated behind a server-side login. One user, hardcoded via env vars.
+
+**Env vars (set in Vercel + `next/.env.local`):**
+
+```
+AUTH_USERNAME=ahmed
+AUTH_PASSWORD=9745
+AUTH_SECRET=<random>     # node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+**How it works:**
+- `POST /api/auth/login` checks username + password (constant-time compare), then sets an HMAC-signed httpOnly cookie (`app_session`) with a 10-year `Max-Age`.
+- `middleware.ts` verifies the cookie on every request. Unauthenticated users are redirected to `/login`. Authenticated users hitting `/login` bounce back home (or to the original `?redirect=` path).
+- The session **never expires** until you log out (Settings → Security → Log out).
+
+**Biometric (WebAuthn) sign-in:**
+
+Real WebAuthn via `@simplewebauthn`. Once signed in, go to **Settings → Security → Add this device** to enroll a passkey (Face ID / fingerprint / Windows Hello). Next time you visit `/login`, tap "Sign in with biometric".
+
+Registered credentials are stored in the `webauthn_credentials` Mongo collection and can be removed from Settings.

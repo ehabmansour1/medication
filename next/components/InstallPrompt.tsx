@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type BIPEvent = Event & {
@@ -11,6 +12,7 @@ type BIPEvent = Event & {
 const DISMISS_KEY = "install_prompt_dismissed";
 
 export default function InstallPrompt() {
+  const pathname = usePathname();
   const [evt, setEvt] = useState<BIPEvent | null>(null);
   const [hidden, setHidden] = useState(true);
 
@@ -47,6 +49,8 @@ export default function InstallPrompt() {
     localStorage.setItem(DISMISS_KEY, "1");
   }
 
+  if (pathname?.startsWith("/share/")) return null;
+  if (pathname === "/login") return null;
   if (hidden || !evt) return null;
 
   return (
