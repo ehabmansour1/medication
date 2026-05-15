@@ -1375,6 +1375,23 @@ body:has(.install-banner) {
     display: none;
   }
 
+  .install-text span.install-ios-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+
+  .install-text span.install-ios-hint svg {
+    flex-shrink: 0;
+    vertical-align: -2px;
+  }
+
   .install-banner .btn-primary {
     padding: 7px 12px;
     font-size: 0.78rem;
