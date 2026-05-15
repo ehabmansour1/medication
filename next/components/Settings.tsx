@@ -51,6 +51,7 @@ export default function Settings() {
 
       {activeTab === "hormones" && <HormonesSection />}
       {activeTab === "goal" && <GoalSection />}
+      {activeTab === "notifications" && <NotificationToggle />}
     </div>
   );
 }
