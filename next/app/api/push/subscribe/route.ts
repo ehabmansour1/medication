@@ -15,7 +15,9 @@ type SubscriptionBody = {
   timezone?: unknown;
 };
 
-function isValidSub(b: SubscriptionBody | null): b is {
+function isValidSub(
+  b: SubscriptionBody | null
+): b is SubscriptionBody & {
   endpoint: string;
   keys: { p256dh: string; auth: string };
 } {
