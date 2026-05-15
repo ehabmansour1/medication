@@ -51,11 +51,16 @@ Copy the two keys it prints into your Vercel project env vars (Production + Prev
 
 **Cron secret:**
 
-Add a `CRON_SECRET` env var with any random string. Vercel automatically sends `Authorization: Bearer ${CRON_SECRET}` on cron calls, and the `/api/cron/medication` route enforces it.
+Add a `CRON_SECRET` env var with any random string. Vercel automatically sends `Authorization: Bearer ${CRON_SECRET}` on cron calls, and the cron routes enforce it.
 
-**Cron schedule:**
+**Cron schedule (Hobby-plan friendly):**
 
-Already configured in `next/vercel.json` to fire at `0 6 * * *` UTC (≈ 9 AM Cairo). To change, edit the cron `schedule` and redeploy.
+`next/vercel.json` has **two daily crons** (the Hobby tier allows up to 2 jobs at daily granularity):
+
+- `/api/cron/medication/morning` at `0 6 * * *` UTC (≈ 8–9 AM Cairo) — primary reminder.
+- `/api/cron/medication/evening` at `0 17 * * *` UTC (≈ 7–8 PM Cairo) — only fires for subscribers who opt in via the "Send an evening nudge" toggle.
+
+Both crons skip subscribers whose dose for today is already marked.
 
 **Enabling on your phone/desktop:**
 

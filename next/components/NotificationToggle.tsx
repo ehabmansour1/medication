@@ -16,19 +16,19 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 type Status = "loading" | "unsupported" | "off" | "on" | "denied";
 
 type Prefs = {
-  preferredHour: number;
-  eveningHour: number | null;
+  eveningEnabled: boolean;
   timezone: string;
 };
 
-const DEFAULT_PREFS: Prefs = {
-  preferredHour: 9,
-  eveningHour: null,
-  timezone:
-    typeof Intl !== "undefined"
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
-      : "UTC",
-};
+function defaultPrefs(): Prefs {
+  return {
+    eveningEnabled: false,
+    timezone:
+      typeof Intl !== "undefined"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+        : "UTC",
+  };
+}
 
 export default function NotificationToggle() {
   const [status, setStatus] = useState<Status>("loading");
@@ -36,8 +36,7 @@ export default function NotificationToggle() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testStatus, setTestStatus] = useState<string | null>(null);
-  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
-  const [eveningEnabled, setEveningEnabled] = useState(false);
+  const [prefs, setPrefs] = useState<Prefs>(defaultPrefs());
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [prefsSaved, setPrefsSaved] = useState(false);
 
@@ -81,17 +80,17 @@ export default function NotificationToggle() {
     try {
       const res = await fetch(`/api/push/subscribe?endpoint=${encodeURIComponent(endpoint)}`);
       if (!res.ok) return;
-      const data = (await res.json()) as Partial<Prefs>;
+      const data = (await res.json()) as {
+        eveningHour?: number | null;
+        timezone?: string;
+      };
       setPrefs({
-        preferredHour:
-          typeof data.preferredHour === "number" ? data.preferredHour : DEFAULT_PREFS.preferredHour,
-        eveningHour: typeof data.eveningHour === "number" ? data.eveningHour : null,
+        eveningEnabled: typeof data.eveningHour === "number",
         timezone:
           typeof data.timezone === "string" && data.timezone.length > 0
             ? data.timezone
-            : DEFAULT_PREFS.timezone,
+            : defaultPrefs().timezone,
       });
-      setEveningEnabled(typeof data.eveningHour === "number");
     } catch {
       /* keep defaults */
     }
@@ -130,14 +129,14 @@ export default function NotificationToggle() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...sub.toJSON(),
-          preferredHour: DEFAULT_PREFS.preferredHour,
+          preferredHour: 9,
           eveningHour: null,
           timezone: tz,
         }),
       });
       if (!saveRes.ok) throw new Error(`Save subscription failed (${saveRes.status})`);
 
-      setPrefs({ ...DEFAULT_PREFS, timezone: tz });
+      setPrefs({ eveningEnabled: false, timezone: tz });
       setSubscription(sub);
       setStatus("on");
     } catch (err) {
@@ -188,8 +187,9 @@ export default function NotificationToggle() {
     }
   }
 
-  async function savePrefs(next: Prefs, eveningOn: boolean) {
+  async function toggleEvening(checked: boolean) {
     if (!subscription) return;
+    setPrefs((prev) => ({ ...prev, eveningEnabled: checked }));
     setPrefsSaving(true);
     setError(null);
     try {
@@ -198,9 +198,7 @@ export default function NotificationToggle() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           endpoint: subscription.endpoint,
-          preferredHour: next.preferredHour,
-          eveningHour: eveningOn ? next.eveningHour ?? 19 : null,
-          timezone: next.timezone,
+          eveningHour: checked ? 19 : null,
         }),
       });
       if (!res.ok) throw new Error(`Save failed (${res.status})`);
@@ -219,8 +217,8 @@ export default function NotificationToggle() {
         <h3>Medication reminders</h3>
       </div>
       <p className="labs-sub">
-        Get a push notification on medication days at your preferred time, only if you haven&apos;t
-        marked today as taken yet.
+        On medication days, a notification fires in the morning if you haven&apos;t marked
+        today&apos;s dose yet. Optionally a second nudge in the evening.
       </p>
 
       {error && <p className="labs-error">{error}</p>}
@@ -260,58 +258,17 @@ export default function NotificationToggle() {
           </div>
 
           <div className="notif-prefs">
-            <label className="field">
-              <span>Morning reminder time</span>
-              <select
-                value={prefs.preferredHour}
-                onChange={(e) => {
-                  const next = { ...prefs, preferredHour: Number(e.target.value) };
-                  setPrefs(next);
-                  savePrefs(next, eveningEnabled);
-                }}
-              >
-                {Array.from({ length: 24 }, (_, h) => (
-                  <option key={h} value={h}>
-                    {String(h).padStart(2, "0")}:00
-                  </option>
-                ))}
-              </select>
-            </label>
-
             <label className="field notif-evening-toggle">
               <input
                 type="checkbox"
-                checked={eveningEnabled}
-                onChange={(e) => {
-                  setEveningEnabled(e.target.checked);
-                  savePrefs(prefs, e.target.checked);
-                }}
+                checked={prefs.eveningEnabled}
+                onChange={(e) => toggleEvening(e.target.checked)}
               />
-              <span>Send an evening nudge if not taken</span>
+              <span>Send an evening nudge if today&apos;s dose isn&apos;t marked</span>
             </label>
 
-            {eveningEnabled && (
-              <label className="field">
-                <span>Evening nudge time</span>
-                <select
-                  value={prefs.eveningHour ?? 19}
-                  onChange={(e) => {
-                    const next = { ...prefs, eveningHour: Number(e.target.value) };
-                    setPrefs(next);
-                    savePrefs(next, true);
-                  }}
-                >
-                  {Array.from({ length: 24 }, (_, h) => (
-                    <option key={h} value={h}>
-                      {String(h).padStart(2, "0")}:00
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
             <p className="labs-sub notif-tz">
-              Timezone: {prefs.timezone}
+              Morning at 06:00 UTC · evening at 17:00 UTC · Timezone: {prefs.timezone}
               {prefsSaving && " · saving…"}
               {prefsSaved && " · saved ✓"}
             </p>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { sendPush } from "@/lib/webpush";
-import { isMedicationDayString, localDateString, localHour } from "@/lib/medication";
+import { isMedicationDayString, localDateString } from "@/lib/medication";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -15,19 +15,27 @@ function isAuthorized(request: Request) {
   return auth === `Bearer ${secret}`;
 }
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ phase: string }> }
+) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const now = new Date();
+  const { phase } = await params;
+  if (phase !== "morning" && phase !== "evening") {
+    return NextResponse.json({ error: "Invalid phase" }, { status: 400 });
+  }
+  const isEvening = phase === "evening";
+
   const db = await getDb();
   const subs = await db.collection("push_subscriptions").find({}).toArray();
-
   if (subs.length === 0) {
     return NextResponse.json({ ok: true, sent: 0, note: "no subscriptions" });
   }
 
+  const now = new Date();
   let sent = 0;
   let cleaned = 0;
   let failed = 0;
@@ -35,19 +43,15 @@ export async function GET(request: Request) {
 
   for (const sub of subs) {
     const tz = typeof sub.timezone === "string" ? sub.timezone : "UTC";
-    const preferred = typeof sub.preferredHour === "number" ? sub.preferredHour : 9;
-    const evening = typeof sub.eveningHour === "number" ? sub.eveningHour : null;
-
     const dateStr = localDateString(now, tz);
+
     if (!isMedicationDayString(dateStr)) {
       skipped++;
       continue;
     }
 
-    const hour = localHour(now, tz);
-    const isMorning = hour === preferred;
-    const isEvening = evening !== null && hour === evening;
-    if (!isMorning && !isEvening) {
+    // Evening cron only fires for subscribers who opted into the evening nudge.
+    if (isEvening && (sub.eveningHour === null || sub.eveningHour === undefined)) {
       skipped++;
       continue;
     }
@@ -87,5 +91,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, sent, cleaned, failed, skipped });
+  return NextResponse.json({ ok: true, phase, sent, cleaned, failed, skipped });
 }
